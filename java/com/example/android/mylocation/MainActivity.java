@@ -23,16 +23,17 @@ import android.Manifest.permission;
 
 import org.w3c.dom.Text;
 
-/** This Activity connects with Google Play Services and display the current Latitude and Langitude
- *  Implement ConnectionCallbacks an OnConnectionFailedListener
+/** This Activity connects with Google Play Services and display the current Latitude and Langitude one second interval
+ *  Implement ConnectionCallbacks, OnConnectionFailedListener and LocationListener
  * */
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener{
+        GoogleApiClient.OnConnectionFailedListener, LocationListener{
 
     private final String LOG_TAG = "MyLocation";
     private GoogleApiClient mGoogleApiClient;
     private Location mLocation;
+    private LocationRequest mLocationRequest;
     private TextView mTextViewLatitude;
     private TextView mTextViewLangitude;
     public static final int MY_PERMISSION_REQUEST_LOCATION = 1;
@@ -144,25 +145,35 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         Log.v(LOG_TAG, connectionResult.getErrorMessage());
     }
 
+    /** This method will be called when the location has changed */
+    @Override
+    public void onLocationChanged(Location location) {
+        mTextViewLatitude.setText(String.valueOf(location.getLatitude()));
+        mTextViewLangitude.setText(String.valueOf(location.getLongitude()));
+    }
+
     public void getMyLocation() {
-        /** User Granted the permission already to check the latest location of the User*/
+        /** User Granted the permission already to check the latest location of the User */
         try {
+            /** Create a Location Request with Default Param */
+            mLocationRequest = LocationRequest.create();
+
+            /** Set the Priority of the Request */
+            mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+            /** Set the Desired Interval for Action Location Update in Milliseconds */
+            mLocationRequest.setInterval(1000);
 
             /** LocationService - The main entry point for location service Integration
              *  FusedLocationProviderApi - Entry point for interacting Fused location provider
-             *  getLastLocation - Returns the best most recent location currently available
+             *  requestLocationUpdates - Request Location Update
              *
-             *  Param: GoogleApiClient Object
+             *  Param: GoogleApiClient Object, LocationRequest Object, LocationListener
              *
-             *  Return: Location object
+             *  Return: PendingResult Object
              *
              *  */
-            mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-            if (mLocation != null) {
-                mTextViewLatitude.setText(String.valueOf(mLocation.getLatitude()));
-                mTextViewLangitude.setText(String.valueOf(mLocation.getLongitude()));
-            }
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
         }
         catch(SecurityException e){
             Log.v(LOG_TAG, e.toString());
